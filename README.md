@@ -3,7 +3,7 @@
 An interactive visualization for understanding the **counting of relations on a finite set** using both **matrix representation** and **roster form**.
 
 The visualization is designed to show *why* the standard counting formulas for relations arise, rather than asking students to simply memorize them.
-
+Visualization Link (https://surajit-sahoo-iitian.github.io/Counting-Relations-/)
 ---
 
 ## 🎯 Purpose
