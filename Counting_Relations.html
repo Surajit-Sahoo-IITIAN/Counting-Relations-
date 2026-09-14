@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Counting Relations — Interactive Explorer</title>
+<style>
+:root{--blue:#2563eb;--navy:#172554;--green:#15803d;--purple:#7c3aed;--red:#b91c1c;--ink:#172033;--muted:#64748b;--line:#dbe3ef;--bg:#f6f8fc}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Segoe UI,Arial,sans-serif}
+header{background:linear-gradient(135deg,#172554,#1d4ed8);color:white;padding:26px}
+header>div,.wrap{max-width:1250px;margin:auto}.wrap{padding:18px}
+h1{margin:0 0 6px}h2{margin:0 0 10px}h3{margin:14px 0 8px}
+.toolbar,.card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:17px;box-shadow:0 3px 12px #00000009}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+select,button{font:inherit}select{padding:9px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff}
+button{min-height:42px;padding:9px 13px;border:0;border-radius:9px;background:#e2e8f0;cursor:pointer;font-weight:700}
+button.primary{background:var(--blue);color:#fff}
+button.dark{background:var(--navy);color:#fff}
+.steps,.stageBtns{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0 9px}
+.step{padding:8px 12px;border-radius:99px;background:#e2e8f0;color:#475569;font-size:14px;font-weight:700}
+.step.active{background:#dbeafe;color:#1d4ed8}.step.done{background:#dcfce7;color:#166534}
+.stageBtns button.active{background:var(--navy);color:#fff}
+.bar{height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-bottom:18px}.bar i{display:block;height:100%;background:var(--blue);transition:.25s}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{margin-bottom:18px}
+.explain{background:#eff6ff;border-left:4px solid var(--blue);padding:13px;border-radius:8px;line-height:1.55}
+.formula{text-align:center;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:11px;padding:14px;margin:12px 0;font-size:23px}
+.metrics{display:flex;gap:8px;flex-wrap:wrap}.metric{flex:1;min-width:140px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px}.metric b{display:block;font-size:21px;margin-top:3px}
+.matrix{border-collapse:separate;border-spacing:5px;margin:10px auto 14px}.matrix th{padding:5px}
+.matrix td{width:58px;height:52px;border:2px solid #cbd5e1;border-radius:9px;text-align:center;background:#fff;position:relative}
+.matrix td button{width:100%;height:100%;padding:0;background:transparent;color:#64748b;font-size:18px}
+.matrix td.on{background:#dbeafe;border-color:#2563eb}.matrix td.on button{color:#1d4ed8}
+.matrix td.lock{background:#dcfce7;border-color:#16a34a}.matrix td.lock button{color:#15803d;cursor:not-allowed}
+.matrix td.pair{background:#f5f3ff;border-color:#a78bfa}.matrix td.pair.on{background:#ede9fe;border-color:#7c3aed}
+.matrix td.bad{background:#fee2e2;border-color:#ef4444}
+.matrix td.highlight{outline:4px solid #f59e0b;outline-offset:1px;z-index:2}
+.matrix td .tag{position:absolute;top:-11px;right:-8px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;font-size:9px;padding:1px 4px;color:#475569}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px}.legend span{display:flex;align-items:center;gap:5px}.sw{width:14px;height:14px;border-radius:4px;border:1px solid #94a3b8}.sw1{background:#dbeafe}.sw2{background:#dcfce7}.sw3{background:#ede9fe}.sw4{background:#fee2e2}
+.roster{background:#0f172a;color:#e2e8f0;padding:13px;border-radius:9px;min-height:85px;font-family:monospace;line-height:1.8;overflow:auto}.pairR{display:inline-block;background:#1e293b;padding:3px 6px;border-radius:5px;margin:2px}
+.choiceGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px}
+.decision{border:2px solid #e2e8f0;border-radius:10px;padding:11px;background:#fff;cursor:pointer;min-height:72px}
+.decision:hover{border-color:#93c5fd}.decision.selected{border-color:#7c3aed;background:#f5f3ff}
+.decision strong{display:block;margin-bottom:4px}.small{font-size:13px;color:var(--muted)}
+.reveal{background:#fff7ed;border-left:4px solid #f59e0b;padding:13px;border-radius:8px;line-height:1.55}
+.countJourney{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}.journey{border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;background:#fff}.journey b{display:block;font-size:25px;margin:3px 0}
+.pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:700}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.countJourney{grid-template-columns:1fr}.matrix td{width:48px;height:45px}}
+</style>
+</head>
+<body>
+<header><div><h1>Counting Relations — Matrix & Roster Explorer</h1><p>Build relations interactively and discover the counting formulas instead of memorising them.</p></div></header>
+<div class="wrap">
+<section class="toolbar">
+<label><b>Set:</b> A = { <span id="setText">a, b, c</span> }</label>
+<label><b>n:</b> <select id="n"><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label>
+<button id="clear">Reset</button><button class="primary" id="random">Random valid relation</button>
+</section>
+
+<div class="steps" id="steps"></div>
+<div class="stageBtns" id="stageBtns"></div>
+<div class="bar"><i id="bar"></i></div>
+
+<div class="grid">
+<section class="card">
+<h2 id="title"></h2>
+<div class="explain" id="explain"></div>
+<div class="formula" id="formula"></div>
+<div class="metrics" id="metrics"></div>
+<div id="revealArea" style="margin-top:13px"></div>
+</section>
+
+<section class="card">
+<h2>Matrix ↔ Roster</h2>
+<div class="legend">
+<span><i class="sw sw1"></i> selected</span><span><i class="sw sw2"></i> compulsory</span>
+<span><i class="sw sw3"></i> symmetric pair</span><span><i class="sw sw4"></i> forbidden</span>
+</div>
+<div id="matrix"></div>
+<h3>Roster form</h3><div class="roster" id="roster"></div>
+<div class="small" style="margin-top:8px">Click matrix cells or decision blocks below. Both representations update together.</div>
+</section>
+</div>
+
+<section class="card">
+<h2 id="interactionTitle"></h2>
+<div id="interaction"></div>
+</section>
+</div>
+
+<script>
+(() => {
+const S={n:3,stage:0,R:new Set(),anti:{},revealed:false,focus:null};
+const names=["All Relations","Reflexive Relations","Symmetric Relations","Antisymmetric Relations"];
+const K=(i,j)=>i+","+j;
+const P=s=>s.split(",").map(Number);
+const letter=i=>String.fromCharCode(97+i);
+function clear(){S.R.clear();S.anti={};S.revealed=false;S.focus=null;render()}
+function setN(v){S.n=+v;clear()}
+function sym(i,j){const a=K(i,j),b=K(j,i);if(S.R.has(a)){S.R.delete(a);S.R.delete(b)}else{S.R.add(a);S.R.add(b)}}
+function setAnti(a,b,c){S.anti[K(a,b)]=c;S.R.delete(K(a,b));S.R.delete(K(b,a));if(c===1)S.R.add(K(a,b));if(c===2)S.R.add(K(b,a))}
+function toggle(i,j){
+if(S.stage===1&&i===j)return;
+if(S.stage===2&&i!==j){sym(i,j);return}
+if(S.stage===3&&i!==j){let a=Math.min(i,j),b=Math.max(i,j),old=S.anti[K(a,b)]||0,dir=i===a?1:2;setAnti(a,b,old===dir?0:dir);return}
+const k=K(i,j);S.R.has(k)?S.R.delete(k):S.R.add(k)
+}
+function randomValid(){
+S.R.clear();S.anti={};const n=S.n;
+if(S.stage===0)for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(Math.random()<.5)S.R.add(K(i,j));
+if(S.stage===1)for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(i===j||Math.random()<.5)S.R.add(K(i,j));
+if(S.stage===2)for(let i=0;i<n;i++)for(let j=i;j<n;j++)if(Math.random()<.5){S.R.add(K(i,j));S.R.add(K(j,i))}
+if(S.stage===3){for(let i=0;i<n;i++)if(Math.random()<.5)S.R.add(K(i,i));for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)setAnti(i,j,Math.floor(Math.random()*3))}
+render()
+}
+function info(){
+const n=S.n;
+if(S.stage===0)return{
+title:"1. All Relations: n² cells → n² decisions",
+explain:"There are n² possible ordered pairs in A × A. Every matrix cell can independently be 0 or 1.",
+formula:`<b>2<sup>n²</sup></b>`,
+journey:[["Cells",n*n],["Independent decisions",n*n],["Choices per decision",2]],
+interaction:"Click any cell. Each cell is an independent yes/no decision."
+};
+if(S.stage===1)return{
+title:"2. Reflexive: lock the diagonal",
+explain:"Reflexivity forces every (a,a) to be present. The n diagonal cells are compulsory; every off-diagonal cell remains an independent 0/1 choice.",
+formula:`<b>2<sup>n(n−1)</sup></b>`,
+journey:[["Diagonal",n+" compulsory"],["Free cells",n*(n-1)],["Choices per free cell",2]],
+interaction:"The diagonal is locked at 1. Click any off-diagonal cell."
+};
+if(S.stage===2)return{
+title:"3. Symmetric: pair the mirror cells",
+explain:"Symmetry forces (a,b) and (b,a) to agree. So those two cells become ONE decision block. Diagonal cells remain individual decisions.",
+formula:`<b>2<sup>n + C(n,2)</sup> = 2<sup>n(n+1)/2</sup></b>`,
+journey:[["Diagonal blocks",n],["Mirror-pair blocks",n*(n-1)/2],["Total blocks",n*(n+1)/2]],
+interaction:"Now click decision blocks. A mirror pair changes together."
+};
+return{
+title:"4. Antisymmetric: three choices per off-diagonal pair",
+explain:"For each unordered pair {a,b}, symmetry in both directions is forbidden. Thus there are exactly three possibilities: neither direction, first direction only, or reverse direction only. Diagonal cells are optional.",
+formula:`<b>2<sup>n</sup> × 3<sup>C(n,2)</sup></b>`,
+journey:[["Diagonal choices",n],["3-choice pairs",n*(n-1)/2],["Total",2**n*3**(n*(n-1)/2)]],
+interaction:"Choose one of three possibilities for each unordered pair."
+}}
+function matrixHTML(){
+let n=S.n,h='<table class="matrix"><tr><th>R</th>';
+for(let j=0;j<n;j++)h+=`<th>${letter(j)}</th>`;h+='</tr>';
+for(let i=0;i<n;i++){h+=`<tr><th>${letter(i)}</th>`;for(let j=0;j<n;j++){
+let cls="",disabled="",tag="",on=S.R.has(K(i,j));
+if(S.stage===1&&i===j){cls="lock";disabled="disabled";tag="fixed"}
+if(S.stage===2&&i!==j){cls="pair";if(S.focus&&S.focus[0]===Math.min(i,j)&&S.focus[1]===Math.max(i,j))cls+=" highlight";tag=`↔`}
+if(S.stage===3&&i!==j){let a=Math.min(i,j),b=Math.max(i,j),c=S.anti[K(a,b)]||0;if((c===1&&i===a)||(c===2&&i===b))cls="on";if((c===1&&i===b)||(c===2&&i===a))cls="bad"}
+h+=`<td class="${cls}" data-i="${i}" data-j="${j}"><button ${disabled}>${on?'1':'0'}</button>${tag?`<span class="tag">${tag}</span>`:''}</td>`}h+='</tr>'}return h+'</table>'
+}
+function rosterHTML(){
+const p=[...S.R].map(P).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);return p.length?'R = { '+p.map(([i,j])=>`<span class="pairR">(${letter(i)}, ${letter(j)})</span>`).join(" ")+' }':'R = ∅'
+}
+function journeyHTML(j){
+return `<div class="countJourney">${j.map(x=>`<div class="journey"><span class="small">${x[0]}</span><b>${x[1]}</b></div>`).join("")}</div>`
+}
+function decisions(){
+if(S.stage===0)return `<div class="small">Independent cell choices: <b>${S.n*S.n}</b>. Click cells directly.</div>`;
+if(S.stage===1)return `<div class="small">The green diagonal is not a choice anymore: it is compulsory. There are <b>${S.n*(S.n-1)}</b> free cells.</div>`;
+if(S.stage===2){
+let h='<div class="small">Each block below is ONE decision. Diagonal blocks have one cell; mirror blocks have two cells.</div><div class="choiceGrid">';
+for(let i=0;i<S.n;i++)h+=`<div class="decision ${S.R.has(K(i,i))?'selected':''}" data-kind="diag" data-i="${i}"><strong>Diagonal: (${letter(i)},${letter(i)})</strong><span class="small">${S.R.has(K(i,i))?'Include':'Exclude'}</span></div>`;
+for(let i=0;i<S.n;i++)for(let j=i+1;j<S.n;j++){let on=S.R.has(K(i,j));h+=`<div class="decision ${on?'selected':''}" data-kind="sym" data-i="${i}" data-j="${j}"><strong>Pair: {${letter(i)},${letter(j)}}</strong><span class="small">${on?'Include both':'Exclude both'} → (${letter(i)},${letter(j)}) and (${letter(j)},${letter(i)})</span></div>`}
+return h+'</div>'
+}
+let h='<div class="small">Every unordered pair has exactly three valid choices.</div><div class="choiceGrid">';
+for(let i=0;i<S.n;i++)for(let j=i+1;j<S.n;j++){let c=S.anti[K(i,j)]||0;
+h+=`<div class="decision ${c===0?'selected':''}" data-kind="anti" data-i="${i}" data-j="${j}" data-c="0"><strong>{${letter(i)},${letter(j)}}: neither</strong><span class="small">Exclude both directions.</span></div>`;
+h+=`<div class="decision ${c===1?'selected':''}" data-kind="anti" data-i="${i}" data-j="${j}" data-c="1"><strong>(${letter(i)},${letter(j)}) only</strong><span class="small">First direction.</span></div>`;
+h+=`<div class="decision ${c===2?'selected':''}" data-kind="anti" data-i="${i}" data-j="${j}" data-c="2"><strong>(${letter(j)},${letter(i)}) only</strong><span class="small">Reverse direction.</span></div>`}
+return h+'</div>'
+}
+function reveal(){
+if(S.stage!==2)return "";
+if(!S.revealed)return `<button class="primary" id="reveal">Reveal the counting idea</button>`;
+let n=S.n,blocks=n+n*(n-1)/2;
+return `<div class="reveal"><b>Watch the 9 cells become 6 decisions when n = 3.</b><br>
+For general n: <br>
+• n diagonal cells → <b>n decisions</b><br>
+• n(n−1) off-diagonal cells form n(n−1)/2 mirror pairs → <b>n(n−1)/2 decisions</b><br>
+Therefore independent decisions =
+<b>n + n(n−1)/2 = n(n+1)/2 = ${blocks}</b>.<br>
+Each decision has 2 possibilities, so
+<b>2<sup>${blocks}</sup></b> symmetric relations.
+</div>`
+}
+function render(){
+const n=S.n,I=info();
+document.getElementById("setText").textContent=[...Array(n)].map((_,i)=>letter(i)).join(", ");
+document.getElementById("steps").innerHTML=names.map((x,i)=>`<div class="step ${i===S.stage?'active':i<S.stage?'done':''}">${i<S.stage?'✓ ':''}${x}</div>`).join("");
+document.getElementById("stageBtns").innerHTML=names.map((x,i)=>`<button class="${i===S.stage?'active':''}" data-stage="${i}">${x}</button>`).join("");
+document.querySelectorAll("[data-stage]").forEach(b=>b.onclick=()=>{S.stage=+b.dataset.stage;clear()});
+document.getElementById("bar").style.width=((S.stage+1)/4*100)+"%";
+document.getElementById("title").textContent=I.title;document.getElementById("explain").textContent=I.explain;document.getElementById("formula").innerHTML=I.formula;document.getElementById("metrics").innerHTML=journeyHTML(I.journey);
+document.getElementById("revealArea").innerHTML=reveal();
+document.getElementById("interactionTitle").textContent=I.interaction;
+document.getElementById("matrix").innerHTML=matrixHTML();document.getElementById("roster").innerHTML=rosterHTML();document.getElementById("interaction").innerHTML=decisions();
+const rv=document.getElementById("reveal");if(rv)rv.onclick=()=>{S.revealed=true;render()};
+document.querySelectorAll("#matrix td").forEach(td=>td.onclick=()=>{toggle(+td.dataset.i,+td.dataset.j);render()});
+document.querySelectorAll(".decision").forEach(d=>d.onclick=()=>{
+const i=+d.dataset.i,j=d.dataset.j!==undefined?+d.dataset.j:null;
+if(d.dataset.kind==="diag"){toggle(i,i)}
+else if(d.dataset.kind==="sym"){S.focus=[i,j];sym(i,j)}
+else {setAnti(i,j,+d.dataset.c)}
+render()
+});
+}
+document.getElementById("n").onchange=e=>setN(e.target.value);
+document.getElementById("clear").onclick=clear;document.getElementById("random").onclick=randomValid;render();
+})();
+</script>
+</body>
+</html>
